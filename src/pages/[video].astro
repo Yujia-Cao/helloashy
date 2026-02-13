@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import { preprocessVideo } from '../content/config';
+import Layout from '~/layouts/Layout.astro';
+import VideoPage from '~/components/blog/VideoPage.astro';
+import PageLayout from '~/layouts/PageLayout.astro';
+
+export async function getStaticPaths() {
+  const videos = await getCollection('videos');
+  return videos.map(({ data }) => ({
+    params: { video: data.properties.Name },
+  }));
+}
+const contents = await getCollection('videos', (e) => e.data.properties.Name == Astro.params.video);
+const video = await preprocessVideo(contents[0]!);
+---
+
+<PageLayout {...video}>
+  <VideoPage post={video} url={new URL(`https://helloashy.com/${Astro.params.video}`)}>
+    <div class="aspect-video">
+      <iframe
+        src={`https://customer-ebtapt8vbbuev3bx.cloudflarestream.com/${video.uid}/iframe`}
+        style="border: none"
+        height="1280"
+        width="720"
+        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+        allowfullscreen="true"></iframe>
+    </div>
+  </VideoPage>
+</PageLayout>

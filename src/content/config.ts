@@ -1,5 +1,45 @@
-import { z, defineCollection } from 'astro:content';
+import { z, defineCollection, type DataEntryMap } from 'astro:content';
 import { glob } from 'astro/loaders';
+import { fileToUrl, notionLoader, notionPageSchema } from 'notion-astro-loader';
+import { transformedPropertySchema } from 'notion-astro-loader/schemas';
+
+const videos = defineCollection({
+  loader: notionLoader({
+    auth: import.meta.env.NOTION_TOKEN,
+    database_id: "30621eb647fe80c09589c79f0bf1dbc9",
+  }),
+  schema: notionPageSchema({
+    properties: z.object({
+      Name: transformedPropertySchema.title,
+      Date: transformedPropertySchema.date.transform((x) => x!.start),
+      Categories: transformedPropertySchema.multi_select,
+      Description: transformedPropertySchema.rich_text,
+      UID: transformedPropertySchema.rich_text,
+    }),
+  }),
+});
+
+export interface VideoProps {
+  uid: string;
+  title: string;
+  date: Date;
+  categories: string[];
+  description: string;
+  image: string;
+}
+
+export const preprocessVideo = async (entry: DataEntryMap["videos"][string]) => {
+  const properties = entry.data.properties;
+  const image = fileToUrl(entry.data.cover!);
+  return {
+    uid: entry.data.properties.UID,
+    title: properties.Name,
+    date: properties.Date,
+    categories: properties.Categories,
+    description: properties.Description,
+    image,
+  } satisfies VideoProps;
+};
 
 const metadataDefinition = () =>
   z
@@ -67,4 +107,5 @@ const postCollection = defineCollection({
 
 export const collections = {
   post: postCollection,
+  videos: videos,
 };
